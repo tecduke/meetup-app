@@ -1,7 +1,6 @@
 package com.meetupapp.servlet;
 
 import com.meetupapp.dao.NotificationDao;
-import com.meetupapp.dao.ParticipantDao;
 import com.meetupapp.dao.UserDao;
 import com.meetupapp.model.User;
 import com.meetupapp.util.PasswordUtil;
@@ -32,7 +31,13 @@ public class AuthServlet extends HttpServlet {
             return;
         }
 
-        request.setAttribute("pageTitle", "Login");
+        if ("/login".equals(path)) {
+            request.setAttribute("pageType", "login");
+        } else {
+            request.setAttribute("pageType", "register");
+        }
+
+        request.setAttribute("pageTitle", "Authentication");
         request.getRequestDispatcher("/WEB-INF/views/auth.jsp").forward(request, response);
     }
 
@@ -55,6 +60,7 @@ public class AuthServlet extends HttpServlet {
         String password = request.getParameter("password");
 
         if (name == null || name.length() < 2 || email == null || !email.contains("@") || city == null || city.length() < 2 || password == null || password.length() < 6) {
+            request.setAttribute("pageType", "register");
             request.setAttribute("error", "Please provide valid name, email, city and a password with at least 6 characters.");
             request.getRequestDispatcher("/WEB-INF/views/auth.jsp").forward(request, response);
             return;
@@ -62,6 +68,7 @@ public class AuthServlet extends HttpServlet {
 
         try {
             if (userDao.findByEmail(email) != null) {
+                request.setAttribute("pageType", "register");
                 request.setAttribute("error", "An account with this email already exists.");
                 request.getRequestDispatcher("/WEB-INF/views/auth.jsp").forward(request, response);
                 return;
@@ -79,6 +86,7 @@ public class AuthServlet extends HttpServlet {
             session.setAttribute("user", created);
             response.sendRedirect(request.getContextPath() + "/dashboard");
         } catch (SQLException e) {
+            request.setAttribute("pageType", "register");
             request.setAttribute("error", "Registration failed. Please try again.");
             request.getRequestDispatcher("/WEB-INF/views/auth.jsp").forward(request, response);
         }
@@ -89,6 +97,7 @@ public class AuthServlet extends HttpServlet {
         String password = request.getParameter("password");
 
         if (email == null || password == null || email.isBlank() || password.isBlank()) {
+            request.setAttribute("pageType", "login");
             request.setAttribute("error", "Email and password are required.");
             request.getRequestDispatcher("/WEB-INF/views/auth.jsp").forward(request, response);
             return;
@@ -97,6 +106,7 @@ public class AuthServlet extends HttpServlet {
         try {
             User user = userDao.findByEmail(email);
             if (user == null || !PasswordUtil.verify(password, user.getPasswordHash())) {
+                request.setAttribute("pageType", "login");
                 request.setAttribute("error", "Invalid email or password.");
                 request.getRequestDispatcher("/WEB-INF/views/auth.jsp").forward(request, response);
                 return;
@@ -106,6 +116,7 @@ public class AuthServlet extends HttpServlet {
             session.setAttribute("user", user);
             response.sendRedirect(request.getContextPath() + "/dashboard");
         } catch (SQLException e) {
+            request.setAttribute("pageType", "login");
             request.setAttribute("error", "Login failed. Please try again.");
             request.getRequestDispatcher("/WEB-INF/views/auth.jsp").forward(request, response);
         }
